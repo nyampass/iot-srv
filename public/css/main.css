@@ -1,0 +1,6 @@
+@media screen and (min-width: 768px) {
+    .chartjs_container {
+	width: 420px;
+	margin: auto;
+    }
+}

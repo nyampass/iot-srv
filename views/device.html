@@ -1,0 +1,21 @@
+<h3>{{device.name}} <small>ステータス更新日時: {{device.updatedAt}}</small></h3>
+<div class="row">
+  <div class="col-md-6">
+    <form method="post" action="/{{device.name}}">
+      <div class="form-group">
+	<label for="code">ステータス変更時のコード</label>
+	<textarea class="form-control" id="code" name="code" rows="8">{{device.code}}</textarea>
+      </div>
+      <button type="submit" class="btn btn-default">更新する</button>
+    </form>
+  </div>
+  <div class="col-md-6">
+    <div class="chartjs_container">
+      <canvas id="chart" width="400" height="400"></canvas>
+    </div>
+    <script>
+      var deviceName = '{{device.name}}';
+    </script>
+    <script src="/js/iot-srv-device.js"></script>
+  </div>
+</div>
