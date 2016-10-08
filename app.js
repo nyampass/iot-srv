@@ -1,5 +1,5 @@
 var express = require('express');
-var redis = require('redis').createClient();
+var redis = require('redis').createClient(process.env.REDIS_URL);
 var hogan = require("hogan.js");
 var bodyParser = require('body-parser');
 
