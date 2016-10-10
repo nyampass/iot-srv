@@ -66,15 +66,16 @@ Device.prototype.updateCode = function(code, callback) {
 
 Device.prototype.runCode = function(code, name, val, prevVal) {
     if (!code) {
-	return true;
+	return "none";
     }
 
     try {
 	eval("(function(deviceName, val, prevVal){" + code + "})(name, val, prevVal)");
-	return true;
+	return "success";
+
     } catch(e) {
 	console.log(e);
-	return false;
+	return "failed";
     }
 }
 
@@ -88,17 +89,18 @@ Device.prototype.setStatus = function(val, callback) {
 	var now = new Date().getTime();
 	var key = name + ":s:" + now;
 
-	redis.set(key, val, function() {
-	    redis.expire(key, REDIS_EXPIRE);
+	var result = self.runCode(code, name, val, prevVal);
+	console.log("setStatusHandler: response: " + result);
 
-	    redis.mset(name + ":updatedAt", now,
-		       name + ":curv", val,
-		       function() {
-			   var result = self.runCode(code, name, val, prevVal);
-			   console.log("setStatusHandler: response: " + result);
-			   callback();
-		       })
-	});
+	redis.mset(key, now,
+		   name + ":updatedAt", now,
+		   name + ":curv", val,
+		   name + ":curr" , result,
+		   function() {
+		       redis.expire(key, REDIS_EXPIRE);
+
+		       callback();
+		   });
     });
 }
 
