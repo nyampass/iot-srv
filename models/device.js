@@ -21,7 +21,7 @@ Device.prototype.status = function(val, callback) {
 
 Device.prototype.info = function(callback) {
     var name = this.name;
-    redis.mget([name + ":code", this.name + ":updatedAt"], function(err, vals) {
+    redis.mget([name + ":code", name + ":updatedAt"], function(err, vals) {
 	var code = vals[0];
 	var updatedAt = vals[1]? new Date(parseInt(vals[1])).toString(): "";
 	callback({
@@ -64,7 +64,22 @@ Device.prototype.updateCode = function(code, callback) {
     });
 }
 
+Device.prototype.runCode = function(code, name, val, prevVal) {
+    if (!code) {
+	return true;
+    }
+
+    try {
+	eval("(function(deviceName, val, prevVal){" + code + "})(name, val, prevVal)");
+	return true;
+    } catch(e) {
+	console.log(e);
+	return false;
+    }
+}
+
 Device.prototype.setStatus = function(val, callback) {
+    var self = this;
     var name = this.name;
     redis.mget([name + ":code", name + ":curv"], function(err, vals) {
 	var code = vals[0];
@@ -79,13 +94,8 @@ Device.prototype.setStatus = function(val, callback) {
 	    redis.mset(name + ":updatedAt", now,
 		       name + ":curv", val,
 		       function() {
-			   if (code) {
-			       try {
-				   console.log("setStatusHandler: response" + eval("(function(deviceName, val, prevVal){" + code + "})(deviceName, val, prevVal)"));
-			       } catch(e) {
-				   console.log(e);
-			       }
-			   }
+			   var result = self.runCode(code, name, val, prevVal);
+			   console.log("setStatusHandler: response: " + result);
 			   callback();
 		       })
 	});
