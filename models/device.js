@@ -92,4 +92,13 @@ Device.prototype.setStatus = function(val, callback) {
     });
 }
 
-module.exports = function(name) { return new Device(name); }
+function deviceList(callback) {
+    redis.keys("*:curv",
+	       function (err, keys) {
+		   loge(err);
+		   callback(keys.map(function(o) { return o.split(":")[0]; }));
+	       });
+}
+
+module.exports = function(name) { return new Device(name); };
+module.exports.list = deviceList;

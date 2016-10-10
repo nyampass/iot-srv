@@ -15,7 +15,12 @@ app.engine('html', require('hogan-express'))
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/', function (req, res) {
-    res.render('index.html', {title: 'test'});
+    device.list(function(devices) {
+	res.render('index.html', {
+	    host: req.protocol + '://' + req.get('host'),
+	    devices: devices.map(function(o) { return {name: o}; })
+	})
+    });
 });
 
 app.get('/:device/status', function (req, res) {
