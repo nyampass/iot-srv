@@ -6,7 +6,7 @@
     "keywords": ["node", "express", "redis", "iot"],
     "addons": [
 	"heroku-redis", {
-	    "plan", "hobby-dev"
+	    "plan": "hobby-dev"
 	}
     ]
 }
