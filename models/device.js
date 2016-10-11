@@ -12,7 +12,7 @@ var Device = function(name) {
   this.name = name;
 }
 
-Device.prototype.status = function(val, callback) {
+Device.prototype.status = function(callback) {
     redis.get(this.name, function(err, val) {
 	loge(err);
 	callback(val || "0");
