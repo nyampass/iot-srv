@@ -5,7 +5,7 @@
     "logo": "https://node-js-sample.herokuapp.com/node.png",
     "keywords": ["node", "express", "redis", "iot"],
     "addons": {
-	"heroku-redis", {
+	"heroku-redis": {
 	    "plan": "hobby-dev"
 	}
     }
