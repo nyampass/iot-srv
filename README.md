@@ -1,7 +1,10 @@
 # iot-srv
 
-お手軽にIoTデバイスのステータスを管理することができ、ステータスが変わったタイミングでのJavaScriptコードの実行
-HerokuへのDeployに対応しています。
+お手軽にIoTデバイスのステータスを管理することができ、ステータスが変わったタイミングでのJavaScriptコードの実行が可能です。
+
+以下のボタンから、Herokuへのデプロイが可能です。
+
+[![Herokuへのデプロイ](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 ## 利用方法
 
