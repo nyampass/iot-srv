@@ -4,9 +4,7 @@
     "repository": "https://github.com/nyampass/iot-srv",
     "logo": "https://node-js-sample.herokuapp.com/node.png",
     "keywords": ["node", "express", "redis", "iot"],
-    "addons": {
-	"heroku-redis": {
-	    "plan": "hobby-dev"
-	}
-    }
+    "addons": [{
+	"plan": "heroku-redis:hobby-dev"
+    }]
 }
