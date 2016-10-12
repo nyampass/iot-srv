@@ -1,7 +1,7 @@
 # iot-srv
 
 
-![capture](http://imgur.com/ulFu0LU)
+![capture](http://imgur.com/ulFu0LU.gif)
 
 お手軽にIoTデバイスのステータスを管理することができ、ステータスが変わったタイミングでのJavaScriptコードの実行が可能です。
 
