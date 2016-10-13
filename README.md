@@ -2,7 +2,7 @@
 
 お手軽にIoTデバイスのステータスを管理することができ、ステータスが変わったタイミングでのJavaScriptコードの実行が可能です。
 
-![capture](http://imgur.com/ulFu0LU.gif)
+![capture](http://i.imgur.com/lioGcyq.png)
 
 以下のボタンから、Herokuへのデプロイが可能です。
 
