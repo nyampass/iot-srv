@@ -3,25 +3,27 @@
   <div class="col-md-6">
     <form method="post" action="/{{device.name}}">
       <div class="form-group">
-	<hr/>
-	<label for="code">ステータス変更時のコード</label>
-	<div class="bs-callout bs-callout-info">JavaScriptで実行され、以下の変数が予め用意されています。
-	  <ul>
-	    <li>deviceName: デバイス名</li>
-	    <li>val: 変更後のステータス。(onの場合100が、offの場合0が入ります。)</li>
-	    <li>prevVal: 変更前のステータス</li>
-	  </ul>
-	</div>
-	<textarea class="form-control" id="code" name="code" rows="8" placeholder="例)
+        <hr/>
+        <label for="code">ステータス変更時のコード</label>
+        <div class="bs-callout bs-callout-info">
+          JavaScriptで実行され、以下の変数が予め用意されています。
+          <ul>
+            <li>deviceName: デバイス名</li>
+            <li>val: 変更後のステータス。(onの場合100が、offの場合0が入ります。)</li>
+            <li>prevVal: 変更前のステータス</li>
+          </ul>
+        </div>
+        <textarea class="form-control" id="code" name="code" rows="8" placeholder="例)
 var https = require('http');
 http.get('http://example.com/launch');
 ">{{device.code}}</textarea>
-	<label for="reset-on-fetch-status" style="margin: 5px 0">ステータス取得時リセット</label>
-	<div class="bs-callout bs-callout-info">ステータスの値を取得する度、強制的にステータス値を0に戻します。<br>
-	  (グラフには影響はありません。戻された際にJavaScriptコードは実行されません。)
-	</div>
+        <label for="reset-on-fetch-status" style="margin: 5px 0">ステータス取得時リセット</label>
+        <div class="bs-callout bs-callout-info">
+          ステータスの値を取得する度、強制的にステータス値を0に戻します。<br>
+          (グラフには影響はありません。戻された際にJavaScriptコードは実行されません。)
+        </div>
 
-	<input type="checkbox" class="form-control" id="rest-on-fetch-status" name="resetOnFetchStatus" value="on"{{#device.resetOnFetchStatus}} checked{{/device.resetOnFetchStatus}}></input>
+        <input type="checkbox" class="form-control" id="rest-on-fetch-status" name="resetOnFetchStatus" value="on"{{#device.resetOnFetchStatus}} checked{{/device.resetOnFetchStatus}}></input>
       </div>
       <button type="submit" class="btn btn-default">更新する</button>
     </form>
