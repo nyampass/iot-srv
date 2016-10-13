@@ -1,4 +1,14 @@
-var redis = require('redis').createClient(process.env.REDIS_URL);
+var redis = require('redis');
+var _redisClient = null;
+
+function redisClient() {
+    if (_redisClient) {
+	return _redisClient;
+    }
+
+    _redisClient = redis.createClient(process.env.REDIS_URL);
+    return _redisClient;
+}
 
 var REDIS_EXPIRE = 86400 * 2;
 
@@ -13,7 +23,7 @@ var Device = function(name) {
 }
 
 Device.prototype.status = function(callback) {
-    redis.get(this.name, function(err, val) {
+    redisClient().get(this.name, function(err, val) {
 	loge(err);
 	callback(val || "0");
     });
@@ -21,7 +31,7 @@ Device.prototype.status = function(callback) {
 
 Device.prototype.info = function(callback) {
     var name = this.name;
-    redis.mget([name + ":code", name + ":updatedAt"], function(err, vals) {
+    redisClient().mget([name + ":code", name + ":updatedAt"], function(err, vals) {
 	var code = vals[0];
 	var updatedAt = vals[1]? new Date(parseInt(vals[1])).toString(): "";
 	callback({
@@ -34,12 +44,12 @@ Device.prototype.info = function(callback) {
 
 Device.prototype.logs = function(callback) {
     var name = this.name;
-    redis.keys(
+    redisClient().keys(
 	name + ":s:*",
 	function (err, keys) {
 	    loge(err);
 	    
-	    redis.mget(keys, function(err, response) {
+	    redisClient().mget(keys, function(err, response) {
 		var logs = [];
 		for (var i = 0; i < keys.length; i++) {
 		    var timeKey = keys[i].match(/.*:(\d+)/);
@@ -58,7 +68,7 @@ Device.prototype.logs = function(callback) {
 }
 
 Device.prototype.updateCode = function(code, callback) {
-    redis.set(this.name + ":code", code, function(err) {
+    redisClient().set(this.name + ":code", code, function(err) {
 	loge(err);
 	callback()
     });
@@ -83,7 +93,7 @@ Device.prototype.setStatus = function(val, callback) {
     var self = this;
     var name = this.name;
 
-    redis.mget([name + ":code", name + ":curv"], function(err, vals) {
+    redisClient().mget([name + ":code", name + ":curv"], function(err, vals) {
 	var code = vals[0];
 	var prevVal = vals[1];
 
@@ -93,12 +103,12 @@ Device.prototype.setStatus = function(val, callback) {
 	var result = self.runCode(code, name, val, prevVal);
 	console.log("setStatusHandler: response: " + result);
 
-	redis.mset(key, val,
+	redisClient().mset(key, val,
 		   name + ":updatedAt", now,
 		   name + ":curv", val,
 		   name + ":curr" , result,
 		   function() {
-		       redis.expire(key, REDIS_EXPIRE);
+		       redisClient().expire(key, REDIS_EXPIRE);
 
 		       callback();
 		   });
@@ -106,7 +116,7 @@ Device.prototype.setStatus = function(val, callback) {
 }
 
 function deviceList(callback) {
-    redis.keys("*:curv",
+    redisClient().keys("*:curv",
 	       function (err, keys) {
 		   loge(err);
 		   callback(keys.map(function(o) { return o.split(":")[0]; }));
