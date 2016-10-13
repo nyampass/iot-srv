@@ -82,6 +82,7 @@ Device.prototype.runCode = function(code, name, val, prevVal) {
 Device.prototype.setStatus = function(val, callback) {
     var self = this;
     var name = this.name;
+
     redis.mget([name + ":code", name + ":curv"], function(err, vals) {
 	var code = vals[0];
 	var prevVal = vals[1];
@@ -92,7 +93,7 @@ Device.prototype.setStatus = function(val, callback) {
 	var result = self.runCode(code, name, val, prevVal);
 	console.log("setStatusHandler: response: " + result);
 
-	redis.mset(key, now,
+	redis.mset(key, val,
 		   name + ":updatedAt", now,
 		   name + ":curv", val,
 		   name + ":curr" , result,

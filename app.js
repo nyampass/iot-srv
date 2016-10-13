@@ -14,6 +14,8 @@ app.engine('html', require('hogan-express'))
 
 app.use(bodyParser.urlencoded({extended: true}));
 
+var pollingStatusRequests = [];
+
 app.get('/', function (req, res) {
     device.list(function(devices) {
 	res.render('index.html', {
@@ -28,6 +30,19 @@ app.get('/:device/status', function (req, res) {
 	res.send(val || "0");
     });
 });
+
+app.get('/:device/status/polling', function (req, res) {
+    pollingStatusRequests.push({name: req.params.device, res: res})
+});
+
+setInterval(function() {
+	while (pollingStatusRequests.length) {
+	    var request = pollingStatusRequests.shift();
+	    device(request.device).status(function(val) {
+		request.res.send(val || "0");
+	    });
+	}
+}, 10000);
 
 app.get('/:device.json', function(req, res) {
     device(req.params.device).logs(function(logs) {
@@ -51,15 +66,27 @@ app.post('/:device', function(req, res) {
     });
 });
 
+function sendPollingStatus(deviceName, val) {
+    while (pollingStatusRequests.length) {
+	if (pollingStatusRequests[0].name == deviceName) {
+	    var request = pollingStatusRequests.shift();
+	    request.res.send(val || "0");
+	}
+    }
+}
+
 function setStatusHandler(valOrFunc) {
     var valFunc = valOrFunc;
     if (typeof valFunc != "function") {
 	valFunc = function(req) { return valOrFunc; }
     }
+
     return function(req, res) {
+	var val = valFunc(req);
 	device(req.params.device).setStatus(
-	    valFunc(req),
+	    val,
 	    function() {
+		sendPollingStatus(req.params.device, val)
 		res.send("ok");
 	    });
     };
