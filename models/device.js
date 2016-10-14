@@ -68,7 +68,7 @@ Device.prototype.info = function(callback) {
 			redisDeviceKey(name, REDIS_KEY.DEVICE_UPDATED_AT)], function(err, vals) {
 			    var code = vals[0];
 			    var resetOnFetchStatus = vals[1] == "1";
-			    var updatedAt = vals[2]? new Date(parseInt(vals[1])).toString(): "";
+			    var updatedAt = vals[2]? new Date(parseInt(vals[2])).toString(): "";
 			    callback({
 				name: name,
 				code: code,

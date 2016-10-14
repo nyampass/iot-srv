@@ -85,7 +85,7 @@ function setStatusHandler(valOrFunc) {
     }
 
     return function(req, res) {
-	var val = valFunc(req);
+	var val = Math.max(Math.min(valFunc(req), 0), 100);
 	device(req.params.device).setStatus(
 	    val,
 	    function() {
@@ -95,12 +95,12 @@ function setStatusHandler(valOrFunc) {
     };
 }
 
-app.get('/:device/on', setStatusHandler("100"));
+app.get('/:device/on', setStatusHandler(100));
 
-app.get('/:device/off', setStatusHandler("0"));
+app.get('/:device/off', setStatusHandler(0));
 
 app.get('/:device/:value', setStatusHandler(function(req) {
-    return req.params.value;
+    return parseInt(req.params.value) || 0;
 }));
 
 var server = app.listen(process.env.PORT || 3000, function () {
