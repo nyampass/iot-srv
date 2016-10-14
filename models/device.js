@@ -43,12 +43,7 @@ Device.prototype.status = function(callback) {
     ], function(err, vals) {
 	loge(err);
 
-	console.log(name);
-	console.log("vals: ");
-	console.log(vals);
-
 	var statusCallback = function() {
-	    console.log("statusCallback: " + (vals[0] || "0"));
 	    callback(vals[0] || "0");
 	}
 
@@ -123,7 +118,7 @@ Device.prototype.runCode = function(code, name, val, prevVal) {
 	return "success";
 
     } catch(e) {
-	console.log(e);
+	loge(e);
 	return "failed";
     }
 }
@@ -141,7 +136,7 @@ Device.prototype.setStatus = function(val, callback) {
 			    var key = redisDeviceKey(name, REDIS_KEY.DEVICE_LOG, now);
 
 			    var result = self.runCode(code, name, val, prevVal);
-			    console.log("setStatusHandler: response: " + result);
+			    // console.log("setStatusHandler: response: " + result);
 			    
 			    redisClient().mset(key, val,
 					       redisDeviceKey(name, REDIS_KEY.DEVICE_UPDATED_AT), now,
