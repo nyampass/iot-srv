@@ -38,8 +38,8 @@ app.get('/:device/status/polling', function (req, res) {
 setInterval(function() {
 	while (pollingStatusRequests.length) {
 	    var request = pollingStatusRequests.shift();
-	    device(request.device).status(function(val) {
-		request.res.send(val || "0");
+	    device(request.name).status(function(val) {
+		request.res.send(val);
 	    });
 	}
 }, 10000);
@@ -56,12 +56,10 @@ app.get('/:device', function(req, res) {
     });
 });
 
-function updateDeviceCode(device, code, callback) {
-    redis.set(device + ":code", code, callback);
-}
-
 app.post('/:device', function(req, res) {
-    device(req.params.device).updateCode(req.body.code, function() {
+    device(req.params.device).updateSettings(req.body.code,
+					     req.body.resetOnFetchStatus == "on",
+					     function() {
 	res.redirect(302, "/" + req.params.device);
     });
 });
@@ -70,7 +68,9 @@ function sendPollingStatus(deviceName, val) {
     while (pollingStatusRequests.length) {
 	if (pollingStatusRequests[0].name == deviceName) {
 	    var request = pollingStatusRequests.shift();
-	    request.res.send(val || "0");
+	    device(request.name).status(function(val) {
+		request.res.send(val);
+	    });
 	}
     }
 }

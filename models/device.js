@@ -3,6 +3,7 @@ var _redisClient = null;
 
 var REDIS_KEY = {
     DEVICE_CODE: "c",
+    DEVICE_RESET_ON_FETCH_STATUS: "r",
     DEVICE_UPDATED_AT: "u",
     DEVICE_LOG: "l",
     DEVICE_CURRENT_STATUS: "cs",
@@ -35,24 +36,47 @@ var Device = function(name) {
 }
 
 Device.prototype.status = function(callback) {
-    redisClient().get(this.name, function(err, val) {
+    var name = this.name;
+    redisClient().mget([
+	redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS),
+	redisDeviceKey(name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS)
+    ], function(err, vals) {
 	loge(err);
-	callback(val || "0");
+
+	console.log(name);
+	console.log("vals: ");
+	console.log(vals);
+
+	var statusCallback = function() {
+	    console.log("statusCallback: " + (vals[0] || "0"));
+	    callback(vals[0] || "0");
+	}
+
+	if (vals[1] && vals[1] == "1") {
+	    redisClient().set(redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS), 0,
+			      statusCallback);
+	} else {
+	    statusCallback();
+	}
+	
     });
 }
 
 Device.prototype.info = function(callback) {
     var name = this.name;
     redisClient().mget([redisDeviceKey(name, REDIS_KEY.DEVICE_CODE),
+			redisDeviceKey(name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS),
 			redisDeviceKey(name, REDIS_KEY.DEVICE_UPDATED_AT)], function(err, vals) {
-	var code = vals[0];
-	var updatedAt = vals[1]? new Date(parseInt(vals[1])).toString(): "";
-	callback({
-	    name: name,
-	    code: code,
-	    updatedAt: updatedAt
-	});
-    });
+			    var code = vals[0];
+			    var resetOnFetchStatus = vals[1] == "1";
+			    var updatedAt = vals[2]? new Date(parseInt(vals[1])).toString(): "";
+			    callback({
+				name: name,
+				code: code,
+				resetOnFetchStatus: resetOnFetchStatus,
+				updatedAt: updatedAt
+			    });
+			});
 }
 
 Device.prototype.logs = function(callback) {
@@ -80,8 +104,10 @@ Device.prototype.logs = function(callback) {
 	});
 }
 
-Device.prototype.updateCode = function(code, callback) {
-    redisClient().set(redisDeviceKey(this.name, REDIS_KEY.DEVICE_CODE), code, function(err) {
+Device.prototype.updateSettings = function(code, resetOnFetchStatus, callback) {
+    redisClient().mset(redisDeviceKey(this.name, REDIS_KEY.DEVICE_CODE), code,
+		       redisDeviceKey(this.name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS), resetOnFetchStatus? "1": "0",
+		       function(err) {
 	loge(err);
 	callback()
     });
