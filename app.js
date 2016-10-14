@@ -37,10 +37,11 @@ app.get('/:device/status/polling', function (req, res) {
 
 setInterval(function() {
 	while (pollingStatusRequests.length) {
-	    var request = pollingStatusRequests.shift();
-	    device(request.name).status(function(val) {
-		request.res.send(val);
-	    });
+	    (function (request) {
+		device(request.name).status(function(val) {
+		    request.res.send(val);
+		});
+	    })(pollingStatusRequests.shift());
 	}
 }, 10000);
 
@@ -67,10 +68,11 @@ app.post('/:device', function(req, res) {
 function sendPollingStatus(deviceName, val) {
     while (pollingStatusRequests.length) {
 	if (pollingStatusRequests[0].name == deviceName) {
-	    var request = pollingStatusRequests.shift();
-	    device(request.name).status(function(val) {
-		request.res.send(val);
-	    });
+	    (function (request) {
+		device(request.name).status(function(val) {
+		    request.res.send(val);
+		});
+	    })(pollingStatusRequests.shift());
 	}
     }
 }
