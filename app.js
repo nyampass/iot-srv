@@ -73,6 +73,7 @@ function sendPollingStatus(deviceName, val) {
 		    request.res.send(val);
 		});
 	    })(pollingStatusRequests.shift());
+	    i -= 1;
 	}
     }
 }

@@ -20,6 +20,10 @@ function redisClient() {
     }
 
     _redisClient = redis.createClient(process.env.REDIS_URL);
+    _redisClient.on('error', function(err) {
+	console.log(err);
+	_redisClient = null;
+    });
     return _redisClient;
 }
 
