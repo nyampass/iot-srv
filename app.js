@@ -66,8 +66,8 @@ app.post('/:device', function(req, res) {
 });
 
 function sendPollingStatus(deviceName, val) {
-    while (pollingStatusRequests.length) {
-	if (pollingStatusRequests[0].name == deviceName) {
+    for (var i = 0; i < pollingStatusRequests.length; i++) {
+	if (pollingStatusRequests[i].name == deviceName) {
 	    (function (request) {
 		device(request.name).status(function(val) {
 		    request.res.send(val);
