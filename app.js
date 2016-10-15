@@ -85,7 +85,7 @@ function setStatusHandler(valOrFunc) {
     }
 
     return function(req, res) {
-	var val = Math.max(Math.min(valFunc(req), 0), 100);
+	var val = Math.min(Math.max(valFunc(req), 0), 100);
 	device(req.params.device).setStatus(
 	    val,
 	    function() {
