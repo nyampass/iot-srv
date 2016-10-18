@@ -16,7 +16,8 @@
     "hogan-express": "0.5.2",
     "express-bootstrap-service": "1.0.0",
     "body-parser": "1.15.2",
-    "marked": "0.3.6"
+    "marked": "0.3.6",
+    "mongodb": "~2.0"
   },
   "author": "",
   "license": "ISC"

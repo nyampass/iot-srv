@@ -1,0 +1,16 @@
+<h2>編集: /docs/{{path}}</h2>
+<form url="/docs/{{doc.path}}" method="post">
+  <label>タイトル</label>
+  <input type="text"
+         name="title"
+         class="form-control form-group"
+         value="{{doc.title}}"
+         placeholder="hogeの説明"></input>
+  <label>本文</label>
+  <textarea rows="10"
+            class="form-control form-group"
+            name="body"
+            placeholder="# hogeとは？
+何気なく使う文字である。">{{doc.body}}</textarea>
+  <button type="submit" class="btn btn-default">登録</button>
+</form>

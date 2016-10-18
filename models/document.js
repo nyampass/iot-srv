@@ -1,30 +1,85 @@
-var fs = require('fs');
-var path = require('path');
-var appDir = path.dirname(require.main.filename)
-var documentsDir = appDir + '/views/docs'
+var mongoClient = require("mongodb").MongoClient;
+var assert = require("assert");
 
-var Document = function(name) {
-  this.name = name;
+var url = 'mongodb://localhost:27017/staff_ops';
+var db = null;
+
+function dbConnection(callback) {
+  if (db != null) {
+    callback(db);
+  } else {
+    mongoClient.connect(url, function(err, _db) {
+      assert.equal(null, err);
+      console.log("connected to db");
+      db = _db;
+      callback(db);
+    })
+  }
 }
 
-function DocumentList(callback) {
-  fs.readdir(documentsDir, function(err, files) {
-    callback(
-      files.map( function (file_name) {
-      return {name: file_name}
-      })
-    )
+function dbDocumentCollection(callback) {
+  dbConnection(function(db) {
+    callback(db.collection("document"))
   })
 }
 
-Document.prototype.info = function(callback) {
-  var name = this.name;
-  fs.readFile(documentsDir + '/' + name, 'utf-8', function(err, data) {
-    callback({
-      body: data
-    });
+var Document = function(id) {
+  this.id = id;
+}
+
+function listDocument(callback) {
+  findDocument(null, callback);
+}
+
+function findDocument(ops, callback) {
+  dbDocumentCollection(function(docCollection) {
+    var docs = [];
+    docCollection.find(ops).each(function(err, doc) {
+      if (doc != null) {
+        docs.push(doc);
+      } else {
+        return callback(docs);
+      }
+    })
   })
 }
 
-module.exports = function(name) { return new Document(name); };
-module.exports.list = DocumentList;
+function findOneDocument(ops, callback) {
+  dbDocumentCollection(function(docCollection) {
+    docCollection.findOne(ops, function(err, result) {
+      callback(result)
+    })
+  })
+}
+
+function updateDocument(find_ops, update_ops, callback) {
+  console.log('update')
+  console.log(update_ops)
+  dbDocumentCollection(function(docCollection) {
+    docCollection.update(find_ops, update_ops, function(err, result) {
+      // console.log('err')
+      // console.log(err)
+      // console.log('result')
+      // console.log(result)
+      callback(err, result)
+    })
+  })
+}
+
+function createDocument(create_ops, callback) {
+  dbDocumentCollection(function(docCollection) {
+    docCollection.insert(create_ops, function(err, result) {
+      // console.log('err')
+      // console.log(err)
+      // console.log('result')
+      // console.log(result)
+      callback(err, result)
+    })
+  })
+}
+
+module.exports = function(id) { return new Document(id); };
+module.exports.list = listDocument;
+module.exports.findOne = findOneDocument;
+module.exports.update = updateDocument;
+module.exports.create = createDocument;

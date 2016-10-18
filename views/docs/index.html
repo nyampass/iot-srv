@@ -1,0 +1,18 @@
+<div class="row">
+  <div class="col-md-8">
+    <h2>ドキュメントトップ</h2>
+    <form url="/docs/" method="get" class="form-inline">
+      <div class="input-group">
+        <div class="input-group-addon">/docs/</div>
+        <input name="path" class="form-control"></input>
+      </div>
+      <button type="submit" class="btn btn-default">を編集する</button>
+    </form>
+  </div>
+  <div class="col-md-4">
+    <li><a href="/docs">ドキュメントトップ</a></li>
+    {{#docs}}
+    <li><a href="/docs/{{path}}">{{title}}</a></li>
+    {{/docs}}
+  </div>
+</div>

@@ -18,24 +18,24 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 var pollingStatusRequests = [];
 
-app.get('/docs', function (req, res) {
-  document.list(function(docs) {
-    res.render('docs.html', {
-      docs: docs
-    })
-  })
-})
+marked.setOptions({
+  // renderer: new marked.Renderer(),
+  // gfm: true,
+  // tables: true,
+  breaks: true,
+  // pedantic: false,
+  // sanitize: false,
+  // smartLists: true,
+  // smartypants: false
+});
 
-app.get('/docs/:document', function (req, res) {
-  document.list(function(docs) {
-    document(req.params.document).info(function(data) {
-      res.render('document.html', {
-        document_html: marked(data.body),
-        docs: docs
-      })
-    })
-  })
-})
+var renderer = new marked.Renderer();
+
+renderer.heading = function(text, level) {
+  var escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+  var numLevel = parseInt(level) + 2;
+  return '<h' + numLevel.toString() + '>' + escapedText + '</h' + numLevel.toString() + '>';
+}
 
 app.get('/', function (req, res) {
   device.list(function(devices) {
@@ -45,6 +45,67 @@ app.get('/', function (req, res) {
     })
   });
 });
+
+app.get('/docs', function (req, res) {
+  if ( req.query.path ) {
+    res.redirect('/docs/' + req.query.path);
+  }
+  document.list(function(docs) {
+    res.render('docs/index.html', {
+      docs: docs
+    })
+  })
+})
+
+app.get('/docs/:path', function (req, res) {
+  var path = req.params.path;
+  document.list(function(docs) {
+    document.findOne({path: path}, function(doc) {
+      var page_data = {
+        path: path,
+        doc: doc,
+        docs: docs
+      }
+      if (doc != null) {
+        page_data.marked_body = marked(doc.body, {renderer: renderer})
+      }
+      if (doc == null || req.query.mode == "edit") {
+        res.render('docs/edit.html', page_data)
+      } else {
+        res.render('docs/show.html', page_data)
+      }
+    })
+  })
+})
+
+app.post('/docs/:path', function (req, res) {
+  var path = req.params.path;
+  document.list(function(docs) {
+    var doc_params = {
+      path: path,
+      title: req.body.title,
+      body: req.body.body,
+    }
+    document.findOne({path: path}, function(doc) {
+      var page_data = {
+        path: path,
+        doc: doc,
+        docs: docs
+      }
+      if (doc == null ) {
+        document.createOrUpdate(doc_params, function(err, result) {
+          res.redirect('/docs/' + path)
+          //res.render('docs/show.html', page_data)
+        })
+      } else {
+        document.update({path: path}, doc_params, function(err, result) {
+          res.redirect('/docs/' + path)
+          //res.render('docs/show.html', page_data)
+        })
+      }
+    })
+  })
+})
 
 app.get('/:device/status', function (req, res) {
   device(req.params.device).status(function(val) {
