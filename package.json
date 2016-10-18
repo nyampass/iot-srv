@@ -15,7 +15,8 @@
     "redis": "2.6.2",
     "hogan-express": "0.5.2",
     "express-bootstrap-service": "1.0.0",
-    "body-parser": "1.15.2"
+    "body-parser": "1.15.2",
+    "marked": "0.3.6"
   },
   "author": "",
   "license": "ISC"

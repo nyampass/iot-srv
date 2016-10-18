@@ -2,6 +2,8 @@ var express = require('express');
 var hogan = require("hogan.js");
 var bodyParser = require('body-parser');
 var device = require("./models/device");
+var document = require("./models/document");
+var marked = require("marked");
 
 var app = express();
 
@@ -15,6 +17,25 @@ app.engine('html', require('hogan-express'))
 app.use(bodyParser.urlencoded({extended: true}));
 
 var pollingStatusRequests = [];
+
+app.get('/docs', function (req, res) {
+  document.list(function(docs) {
+    res.render('docs.html', {
+      docs: docs
+    })
+  })
+})
+
+app.get('/docs/:document', function (req, res) {
+  document.list(function(docs) {
+    document(req.params.document).info(function(data) {
+      res.render('document.html', {
+        document_html: marked(data.body),
+        docs: docs
+      })
+    })
+  })
+})
 
 app.get('/', function (req, res) {
   device.list(function(devices) {
