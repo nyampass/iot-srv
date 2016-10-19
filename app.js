@@ -32,9 +32,8 @@ marked.setOptions({
 var renderer = new marked.Renderer();
 
 renderer.heading = function(text, level) {
-  var escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
   var numLevel = parseInt(level) + 2;
-  return '<h' + numLevel.toString() + '>' + escapedText + '</h' + numLevel.toString() + '>';
+  return '<h' + numLevel.toString() + '>' + text + '</h' + numLevel.toString() + '>';
 }
 
 app.get('/', function (req, res) {
@@ -58,20 +57,18 @@ app.get('/docs', function (req, res) {
 })
 
 app.get('/docs/:path', function (req, res) {
-  var path = req.params.path;
+  var path = req.params.path
   document.list(function(docs) {
-    document.findOne({path: path}, function(doc) {
+    document(path).info(function(doc) {
       var page_data = {
         path: path,
         doc: doc,
         docs: docs
       }
-      if (doc != null) {
-        page_data.marked_body = marked(doc.body, {renderer: renderer})
-      }
-      if (doc == null || req.query.mode == "edit") {
+      if (doc == null || doc.updated_at == null || req.query.mode == "edit") {
         res.render('docs/edit.html', page_data)
       } else {
+        page_data.marked_body = marked(doc.body, {renderer: renderer})
         res.render('docs/show.html', page_data)
       }
     })
@@ -80,31 +77,12 @@ app.get('/docs/:path', function (req, res) {
 
 app.post('/docs/:path', function (req, res) {
   var path = req.params.path;
-  document.list(function(docs) {
-    var doc_params = {
-      path: path,
-      title: req.body.title,
-      body: req.body.body,
-    }
-    document.findOne({path: path}, function(doc) {
-      var page_data = {
-        path: path,
-        doc: doc,
-        docs: docs
-      }
-      if (doc == null ) {
-        document.createOrUpdate(doc_params, function(err, result) {
-          res.redirect('/docs/' + path)
-          //res.render('docs/show.html', page_data)
-        })
-      } else {
-        document.update({path: path}, doc_params, function(err, result) {
-          res.redirect('/docs/' + path)
-          //res.render('docs/show.html', page_data)
-        })
-      }
-    })
-  })
+  document(path).setText({
+    path: path,
+    title: req.body.title,
+    body: req.body.body}, function() {
+      res.redirect('/docs/' + path)
+    });
 })
 
 app.get('/:device/status', function (req, res) {

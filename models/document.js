@@ -1,85 +1,78 @@
-var mongoClient = require("mongodb").MongoClient;
-var assert = require("assert");
+var redis = require('redis');
+var _redisClient = null;
 
-var url = 'mongodb://localhost:27017/staff_ops';
-var db = null;
+var REDIS_DOCUMENT_KEY = {
+  TITLE: "title",
+  BODY: "body",
+  UPDATED_AT: "updated_at",
+}
 
-function dbConnection(callback) {
-  if (db != null) {
-    callback(db);
-  } else {
-    mongoClient.connect(url, function(err, _db) {
-      assert.equal(null, err);
-      console.log("connected to db");
-      db = _db;
-      callback(db);
-    })
+function redisDocumentKey(documentPath, key, option) {
+  return "doc:" + documentPath + ":" + key + (option? ":" + option: "");
+}
+
+function redisClient() {
+  if (_redisClient) {
+    return _redisClient;
+  }
+
+  _redisClient = redis.createClient(process.env.REDIS_URL);
+  _redisClient.on('error', function(err) {
+    console.log(err);
+    _redisClient = null;
+  });
+  return _redisClient;
+}
+
+function loge(err) {
+  if (err) {
+    console.log("ERR: " + err);
   }
 }
 
-function dbDocumentCollection(callback) {
-  dbConnection(function(db) {
-    callback(db.collection("document"))
-  })
+var Document = function(path) {
+  this.path = path;
 }
 
-var Document = function(id) {
-  this.id = id;
+Document.prototype.info = function(callback) {
+  var path = this.path;
+  redisClient().mget([
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.TITLE),
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.BODY),
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.UPDATED_AT)], function(err, vals) {
+      callback({
+        path: path,
+        title: vals[0],
+        body: vals[1],
+        updated_at: vals[2],
+      });
+    });
 }
 
-function listDocument(callback) {
-  findDocument(null, callback);
+Document.prototype.setText = function(vals, callback) {
+  var path = this.path;
+  var now = new Date().getTime();
+  redisClient().mset([
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.TITLE), vals.title,
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.BODY), vals.body,
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.UPDATED_AT), now], function(err, vals) {
+      callback();
+    });
 }
 
-function findDocument(ops, callback) {
-  dbDocumentCollection(function(docCollection) {
-    var docs = [];
-    docCollection.find(ops).each(function(err, doc) {
-      if (doc != null) {
-        docs.push(doc);
-      } else {
-        return callback(docs);
-      }
-    })
-  })
+function documentList(callback) {
+  redisClient().keys(
+    redisDocumentKey("*", REDIS_DOCUMENT_KEY.TITLE),
+    function (err, keys) {
+      loge(err);
+      callback(keys.map(function(o) {
+        return {
+          path: o.split(":")[1],
+          title: o.split(":")[1],
+        }
+      }));
+    });
 }
 
-function findOneDocument(ops, callback) {
-  dbDocumentCollection(function(docCollection) {
-    docCollection.findOne(ops, function(err, result) {
-      callback(result)
-    })
-  })
-}
-
-function updateDocument(find_ops, update_ops, callback) {
-  console.log('update')
-  console.log(update_ops)
-  dbDocumentCollection(function(docCollection) {
-    docCollection.update(find_ops, update_ops, function(err, result) {
-      // console.log('err')
-      // console.log(err)
-      // console.log('result')
-      // console.log(result)
-      callback(err, result)
-    })
-  })
-}
-
-function createDocument(create_ops, callback) {
-  dbDocumentCollection(function(docCollection) {
-    docCollection.insert(create_ops, function(err, result) {
-      // console.log('err')
-      // console.log(err)
-      // console.log('result')
-      // console.log(result)
-      callback(err, result)
-    })
-  })
-}
-
-module.exports = function(id) { return new Document(id); };
-module.exports.list = listDocument;
-module.exports.findOne = findOneDocument;
-module.exports.update = updateDocument;
-module.exports.create = createDocument;
+module.exports = function(path) { return new Document(path); };
+module.exports.list = documentList;
