@@ -17,82 +17,83 @@ app.use(bodyParser.urlencoded({extended: true}));
 var pollingStatusRequests = [];
 
 app.get('/', function (req, res) {
-    device.list(function(devices) {
-	res.render('index.html', {
-	    host: req.protocol + '://' + req.get('host'),
-	    devices: devices.map(function(o) { return {name: o}; })
-	})
-    });
+  device.list(function(devices) {
+    res.render('index.html', {
+      host: req.protocol + '://' + req.get('host'),
+      devices: devices.map(function(o) { return {name: o}; })
+    })
+  });
 });
 
 app.get('/:device/status', function (req, res) {
-    device(req.params.device).status(function(val) {
-	res.send(val || "0");
-    });
+  device(req.params.device).status(function(val) {
+    res.send(val || "0");
+  });
 });
 
 app.get('/:device/status/polling', function (req, res) {
-    pollingStatusRequests.push({name: req.params.device, res: res})
+  pollingStatusRequests.push({name: req.params.device, res: res})
 });
 
 setInterval(function() {
-	while (pollingStatusRequests.length) {
-	    (function (request) {
-		device(request.name).status(function(val) {
-		    request.res.send(val);
-		});
-	    })(pollingStatusRequests.shift());
-	}
+  while (pollingStatusRequests.length) {
+    (function (request) {
+      device(request.name).status(function(val) {
+        request.res.send(val);
+      });
+    })(pollingStatusRequests.shift());
+  }
 }, 10000);
 
 app.get('/:device.json', function(req, res) {
-    device(req.params.device).logs(function(logs) {
-	res.json(logs);
-    });
+  device(req.params.device).logs(function(logs) {
+    res.json(logs);
+  });
 });
 
 app.get('/:device', function(req, res) {
-    device(req.params.device).info(function(device) {
-	res.render('device.html', {"device": device});
-    });
+  device(req.params.device).info(function(device) {
+    res.render('device.html', {"device": device});
+  });
 });
 
 app.post('/:device', function(req, res) {
-    device(req.params.device).updateSettings(req.body.code,
-					     req.body.resetOnFetchStatus == "on",
-					     function() {
-	res.redirect(302, "/" + req.params.device);
+  device(req.params.device).updateSettings(
+    req.body.code,
+    req.body.resetOnFetchStatus == "on",
+    function() {
+      res.redirect(302, "/" + req.params.device);
     });
 });
 
 function sendPollingStatus(deviceName, val) {
     for (var i = 0; i < pollingStatusRequests.length; i++) {
-	if (pollingStatusRequests[i].name == deviceName) {
-	    (function (request) {
-		device(request.name).status(function(val) {
-		    request.res.send(val);
-		});
-	    })(pollingStatusRequests.shift());
-	    i -= 1;
-	}
+  if (pollingStatusRequests[i].name == deviceName) {
+      (function (request) {
+    device(request.name).status(function(val) {
+        request.res.send(val);
+    });
+      })(pollingStatusRequests.shift());
+      i -= 1;
+  }
     }
 }
 
 function setStatusHandler(valOrFunc) {
-    var valFunc = valOrFunc;
-    if (typeof valFunc != "function") {
-	valFunc = function(req) { return valOrFunc; }
-    }
+  var valFunc = valOrFunc;
+  if (typeof valFunc != "function") {
+    valFunc = function(req) { return valOrFunc; }
+  }
 
-    return function(req, res) {
-	var val = Math.min(Math.max(valFunc(req), 0), 100);
-	device(req.params.device).setStatus(
-	    val,
-	    function() {
-		sendPollingStatus(req.params.device, val)
-		res.send("ok");
-	    });
-    };
+  return function(req, res) {
+    var val = Math.min(Math.max(valFunc(req), 0), 100);
+    device(req.params.device).setStatus(
+      val,
+      function() {
+        sendPollingStatus(req.params.device, val)
+        res.send("ok");
+      });
+  };
 }
 
 app.get('/:device/on', setStatusHandler(100));
@@ -100,11 +101,11 @@ app.get('/:device/on', setStatusHandler(100));
 app.get('/:device/off', setStatusHandler(0));
 
 app.get('/:device/:value', setStatusHandler(function(req) {
-    return parseInt(req.params.value) || 0;
+  return parseInt(req.params.value) || 0;
 }));
 
 var server = app.listen(process.env.PORT || 3000, function () {
-    var host = server.address().address;
-    var port = server.address().port;
-    console.log('app listening at http://%s:%s', host, port);
+  var host = server.address().address;
+  var port = server.address().port;
+  console.log('app listening at http://%s:%s', host, port);
 });

@@ -2,9 +2,9 @@
   <div class="col-md-6">
     <h3>デバイス一覧</h3>
     <ul>
-    {{#devices}}
+      {{#devices}}
       <li><a href="/{{name}}">{{name}}</a></li>
-    {{/devices}}
+      {{/devices}}
     </ul>
   </div>
   <div class="col-md-6">
@@ -15,11 +15,11 @@
     <h4>ステータス更新</h4>
     <ul>
       <li>特定の値に更新<br>
-	{{host}}/&lt;デバイス名&gt;/&lt;数字&gt;</li>
+	      {{host}}/&lt;デバイス名&gt;/&lt;数字&gt;</li>
       <li>ステータスを100に更新<br>
-	{{host}}/&lt;デバイス名&gt;/on</li>
+	      {{host}}/&lt;デバイス名&gt;/on</li>
       <li>ステータスを0に更新<br>
-	{{host}}/&lt;デバイス名&gt;/off</li>
+	      {{host}}/&lt;デバイス名&gt;/off</li>
     </ul>
 
     <h4>ステータス確認</h4>
