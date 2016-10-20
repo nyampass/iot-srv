@@ -60,6 +60,17 @@ Document.prototype.setText = function(vals, callback) {
     });
 }
 
+Document.prototype.destroy = function(callback) {
+  var path = this.path;
+  redisClient().del(
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.TITLE),
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.BODY),
+    redisDocumentKey(path, REDIS_DOCUMENT_KEY.UPDATED_AT),
+    function(err, o) {
+      callback()
+    })
+}
+
 function documentList(callback) {
   redisClient().keys(
     redisDocumentKey("*", REDIS_DOCUMENT_KEY.TITLE),

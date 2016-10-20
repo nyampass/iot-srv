@@ -1,9 +1,29 @@
+<script>
+  $(document).on('click', 'a[data-confirm]', function(e) {
+    if (confirm($(this).attr('data-confirm'))) {
+      console.log('pass')
+    } else {
+      e.preventDefault();
+      console.log('stop')
+    }
+  })
+</script>
+
+
 <div class="row">
   <div class="col-md-8">
-    <h2>{{doc.title}}</h2>
+    <h2>
+      {{doc.title}}
+      <small>/docs/{{doc.path}}</small>
+    </h2>
     <div class="text-right">
-      <a href="/docs/{{path}}?mode=edit" class="btn btn-default btn-sm">
+      <a href="/docs/{{path}}?action=edit" class="btn btn-default btn-sm">
         編集する
+      </a>
+      <a href="/docs/{{path}}?action=delete"
+         data-confirm="{{doc.title}}を削除しますか？"
+         class="btn btn-default btn-sm">
+        削除する
       </a>
     </div>
     {{{marked_body}}}

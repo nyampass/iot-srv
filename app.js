@@ -48,6 +48,7 @@ app.get('/', function (req, res) {
 app.get('/docs', function (req, res) {
   if ( req.query.path ) {
     res.redirect('/docs/' + req.query.path);
+    return;
   }
   document.list(function(docs) {
     res.render('docs/index.html', {
@@ -58,20 +59,25 @@ app.get('/docs', function (req, res) {
 
 app.get('/docs/:path', function (req, res) {
   var path = req.params.path
-  document.list(function(docs) {
-    document(path).info(function(doc) {
-      var page_data = {
-        path: path,
-        doc: doc,
-        docs: docs
-      }
-      if (doc == null || doc.updated_at == null || req.query.mode == "edit") {
-        res.render('docs/edit.html', page_data)
-      } else {
+  document(path).info(function(doc) {
+    var page_data = {
+      path: path,
+      doc: doc,
+    }
+    if (req.query.action == "delete") {
+      document(path).destroy(function() {
+        console.log('delete')
+        res.redirect('/docs')
+      });
+    } else if (doc == null || doc.updated_at == null || req.query.action == "edit") {
+      res.render('docs/edit.html', page_data)
+    } else {
+      document.list(function(docs) {
+        page_data.docs = docs
         page_data.marked_body = marked(doc.body, {renderer: renderer})
         res.render('docs/show.html', page_data)
-      }
-    })
+      })
+    }
   })
 })
 
