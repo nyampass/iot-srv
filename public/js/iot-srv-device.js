@@ -1,6 +1,6 @@
 (function() {
   var ctx = document.getElementById("chart");
-  jQuery.getJSON( "/" + deviceName + ".json", function(device) {
+  jQuery.getJSON( "/devices/" + deviceName + ".json", function(device) {
     data = device;
     new Chart(ctx, {
       type: 'line',

@@ -1,0 +1,30 @@
+<div class="row">
+  <div class="col-md-6">
+    <h3>デバイス一覧</h3>
+    <ul>
+      {{#devices}}
+      <li><a href="/devices/{{name}}">{{name}}</a></li>
+      {{/devices}}
+    </ul>
+  </div>
+  <div class="col-md-6">
+    <h3>利用方法</h3>
+    デバイスごとのステータス(0から100までの数字)をiot-srvは受付、2日間のデータを保持します。<br>
+    デバイス名の部分は英数字を利用できます。予め登録する必要はありません。<br>
+
+    <h4>ステータス更新</h4>
+    <ul>
+      <li>特定の値に更新<br>
+	      {{host}}/devices/&lt;デバイス名&gt;/&lt;数字&gt;</li>
+      <li>ステータスを100に更新<br>
+	      {{host}}/devices/&lt;デバイス名&gt;/on</li>
+      <li>ステータスを0に更新<br>
+	      {{host}}/devices/&lt;デバイス名&gt;/off</li>
+    </ul>
+
+    <h4>ステータス確認</h4>
+    <ul>
+      <li>{{host}}/devices/&lt;デバイス名&gt;</li>
+    </ul>
+  </div>
+</div>

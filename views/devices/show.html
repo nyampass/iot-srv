@@ -1,7 +1,7 @@
 <h2>{{device.name}}<br><small>ステータス更新日時: {{device.updatedAt}}</small></h2>
 <div class="row">
   <div class="col-md-6">
-    <form method="post" action="/{{device.name}}">
+    <form method="post" action="/devices/{{device.name}}">
       <div class="form-group">
         <hr/>
         <label for="code">ステータス変更時のコード</label>
@@ -14,7 +14,7 @@
           </ul>
         </div>
         <textarea class="form-control" id="code" name="code" rows="8" placeholder="例)
-var https = require('http');
+var http = require('http');
 http.get('http://example.com/launch');
 ">{{device.code}}</textarea>
         <label for="reset-on-fetch-status" style="margin: 5px 0">ステータス取得時リセット</label>

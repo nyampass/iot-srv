@@ -11,7 +11,7 @@ var REDIS_KEY = {
 }
 
 function redisDeviceKey(deviceName, key, option) {
-  return deviceName + ":" + key + (option? ":" + option: "");
+  return "device:" + deviceName + ":" + key + (option? ":" + option: "");
 }
 
 function redisClient() {
@@ -163,7 +163,7 @@ function deviceList(callback) {
     redisDeviceKey("*", REDIS_KEY.DEVICE_CURRENT_STATUS),
     function (err, keys) {
       loge(err);
-      callback(keys.map(function(o) { return o.split(":")[0]; }));
+      callback(keys.map(function(o) { return o.split(":")[1]; }));
     });
 }
 
