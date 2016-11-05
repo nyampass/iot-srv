@@ -8,15 +8,14 @@
     "test": "xo && node --harmony test"
   },
   "engines": {
-    "node": "7.0.0"
+    "node": "^7.0.0"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
-    "body-parser": "1.15.2",
-    "express": "4.13.4",
-    "express-bootstrap-service": "1.0.0",
-    "hogan-express": "0.5.2",
-    "redis": "2.6.2"
+    "body-parser": "^1.15.2",
+    "express": "^4.13.4",
+    "hogan-express": "^0.5.2",
+    "redis": "^2.6.2"
   },
   "devDependencies": {
     "blue-tape": "^1.0.0",
