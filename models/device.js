@@ -53,7 +53,7 @@ const device = {
 
   async info(name) {
     const [code = '', resetOnFetchStatus = '0', updatedAtString] = await mget(name, CODE, RESET_ON_FETCH_STATUS, UPDATED_AT)
-    const updatedAt = updatedAtString === null ? new Date(parseInt(updatedAtString, 10)) : ''
+    const updatedAt = updatedAtString === null ? '' : new Date(parseInt(updatedAtString, 10))
     return {code, name, resetOnFetchStatus: resetOnFetchStatus === '1', updatedAt}
   },
 
