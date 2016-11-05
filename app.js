@@ -9,10 +9,8 @@ const app = express()
 
 app.use(express.static('public'))
 
-app.set('view engine', 'html')
-app.set('layout', 'layout')
+app.set('view engine', 'pug')
 app.enable('view cache')
-app.engine('html', require('hogan-express'))
 
 app.use(bodyParser.urlencoded({extended: true}))
 

@@ -1,0 +1,34 @@
+extends layout
+
+block content
+  h2
+    = device.name
+    br
+    small ステータス更新日時: #{device.updatedAt}
+  .row
+    .col-md-6
+      form(method='post', action=`/${device.name}`)
+        .form-group
+          hr
+          label(for='code') ステータス変更時のコード
+          .bs-callout.bs-callout-info
+            | JavaScriptとして実行され、以下の変数が予め定義されています。
+            ul
+              li #[code deviceName]: デバイス名
+              li #[code val]: 変更後のステータス。(onの場合100が、offの場合0が入ります。)
+              li #[code prevVal]: 変更前のステータス
+          textarea#code.form-control(name='code', rows=8, placeholder=`var https = require('http');
+  http.get('http://example.com/launch');`)
+          label(for='reset-on-fetch-status', style={margin: '5px 0'}) ステータシ取得時リセット
+          .bs-callout.bs-callout-info
+            p ステータスの値を取得する度、強制的にステータス値を0に戻します。
+            p (グラフには影響はありません。戻された際にJavaScriptコードは実行されません。)
+          input#reset-on-fetch-status.form-control(name='resetOnFetchStatus', type='checkbox', value='on', checked=device.resetOnFetchStatus)
+        button.btn.btn-default(type='submit') 更新する
+
+    .col-md-6
+      .chartjs_container
+        canvas#chart(width=400, height=400)
+      script
+        | var deviceName = '#{device.name}'
+      script(src='/js/iot-srv-device.js')
