@@ -1,111 +1,90 @@
-var express = require('express');
-var hogan = require("hogan.js");
-var bodyParser = require('body-parser');
-var device = require("./models/device");
+'use strict'
 
-var app = express();
+const express = require('express')
+const bodyParser = require('body-parser')
 
-app.use(express.static('public'));
+const device = require('./models/device')
+
+const app = express()
+
+app.use(express.static('public'))
 
 app.set('view engine', 'html')
 app.set('layout', 'layout')
 app.enable('view cache')
 app.engine('html', require('hogan-express'))
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({extended: true}))
 
-var pollingStatusRequests = [];
+app.get('/', (req, res, next) => device.list()
+  .then(devices => {
+    const host = `${req.protocol}://${req.get('host')}`
+    res.render('index', {host, devices})
+  })
+  .catch(next))
 
-app.get('/', function (req, res) {
-  device.list(function(devices) {
-    res.render('index.html', {
-      host: req.protocol + '://' + req.get('host'),
-      devices: devices.map(function(o) { return {name: o}; })
-    })
-  });
-});
+app.get('/:device/status', (req, res, next) => device.status(req.params.device)
+  .then(value => res.send(value))
+  .catch(next))
 
-app.get('/:device/status', function (req, res) {
-  device(req.params.device).status(function(val) {
-    res.send(val || "0");
-  });
-});
+app.get('/:device/status/polling', (req, res, next) => {
+  let eventToken
+  let timeoutToken
+  const name = req.params.device
 
-app.get('/:device/status/polling', function (req, res) {
-  pollingStatusRequests.push({name: req.params.device, res: res})
-});
+  eventToken = device.once(`update:${name}`, value => {
+    clearTimeout(timeoutToken)
+    res.send(value)
+  })
 
-setInterval(function() {
-  while (pollingStatusRequests.length) {
-    (function (request) {
-      device(request.name).status(function(val) {
-        request.res.send(val);
-      });
-    })(pollingStatusRequests.shift());
-  }
-}, 10000);
+  timeoutToken = setTimeout(() => {
+    eventToken.cancel()
+    device.status(name)
+      .then(value => res.send(value))
+      .catch(next)
+  }, 10000)
+})
 
-app.get('/:device.json', function(req, res) {
-  device(req.params.device).logs(function(logs) {
-    res.json(logs);
-  });
-});
+app.get('/:device.json', (req, res, next) => device.logs(req.params.device)
+  .then(logs => res.json(logs))
+  .catch(next))
 
-app.get('/:device', function(req, res) {
-  device(req.params.device).info(function(device) {
-    res.render('device.html', {"device": device});
-  });
-});
+app.get('/:device', (req, res, next) => device.info(req.params.device)
+  .then(device => res.render('device', {device}))
+  .catch(next))
 
-app.post('/:device', function(req, res) {
-  device(req.params.device).updateSettings(
-    req.body.code,
-    req.body.resetOnFetchStatus == "on",
-    function() {
-      res.redirect(302, "/" + req.params.device);
-    });
-});
+app.post('/:device', (req, res, next) => {
+  const name = req.params.device
+  const {code, resetOnFetchStatus} = req.body
 
-function sendPollingStatus(deviceName, val) {
-    for (var i = 0; i < pollingStatusRequests.length; i++) {
-  if (pollingStatusRequests[i].name == deviceName) {
-      (function (request) {
-    device(request.name).status(function(val) {
-        request.res.send(val);
-    });
-      })(pollingStatusRequests.shift());
-      i -= 1;
-  }
-    }
-}
+  device.updateSettings(name, code, resetOnFetchStatus === 'on')
+    .then(() => res.redirect(`/${name}`))
+    .catch(next)
+})
 
-function setStatusHandler(valOrFunc) {
-  var valFunc = valOrFunc;
-  if (typeof valFunc != "function") {
-    valFunc = function(req) { return valOrFunc; }
-  }
+app.get('/:device/on', (req, res, next) => device.setStatus(req.params.device, '100')
+  .then(() => res.send('ok'))
+  .catch(next))
 
-  return function(req, res) {
-    var val = Math.min(Math.max(valFunc(req), 0), 100);
-    device(req.params.device).setStatus(
-      val,
-      function() {
-        sendPollingStatus(req.params.device, val)
-        res.send("ok");
-      });
-  };
-}
+app.get('/:device/off', (req, res, next) => device.setStatus(req.params.device, '0')
+  .then(() => res.send('ok'))
+  .catch(next))
 
-app.get('/:device/on', setStatusHandler(100));
+app.get('/:device/:value', (req, res, next) => device
+  .setStatus(req.params.device, String(parseInt(req.params.value, 10) || '0'))
+  .then(() => res.send('ok'))
+  .catch(next))
 
-app.get('/:device/off', setStatusHandler(0));
+module.exports = new Promise((resolve, reject) => {
+  let server = app.listen(process.env.PORT || 3000, process.env.HOST || '0.0.0.0')
 
-app.get('/:device/:value', setStatusHandler(function(req) {
-  return parseInt(req.params.value) || 0;
-}));
+  server.once('listening', () => {
+    const {address, port} = server.address()
+    console.log('app listening at http://%s:%s', address, port)
+    resolve(server)
+  })
 
-var server = app.listen(process.env.PORT || 3000, function () {
-  var host = server.address().address;
-  var port = server.address().port;
-  console.log('app listening at http://%s:%s', host, port);
-});
+  server.once('error', err => {
+    reject(err)
+  })
+})

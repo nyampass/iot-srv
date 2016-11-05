@@ -4,18 +4,19 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app"
+    "start": "node --harmony app",
   },
   "engines": {
-    "node": "6.7.0",
-    "npm": "3.10.3"
+    "node": "7.0.0"
   },
   "dependencies": {
+    "bluebird": "^3.4.6",
+    "body-parser": "1.15.2",
     "express": "4.13.4",
-    "redis": "2.6.2",
-    "hogan-express": "0.5.2",
     "express-bootstrap-service": "1.0.0",
-    "body-parser": "1.15.2"
+    "hogan-express": "0.5.2",
+    "redis": "2.6.2"
+  },
   },
   "author": "",
   "license": "ISC"
