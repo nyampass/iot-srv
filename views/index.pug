@@ -5,8 +5,12 @@ block content
     .col-md-6
       h3 デバイス一覧
       ul
-        each name in devices
+        - for (const name of devices)
           li: a(href=name)= name
+      h3 トークン一覧
+      ul
+        - for (const token of tokens)
+          li= `${token.os}:${token.id}`
     .col-md-6
       h3 利用方法
       p デバイスごとのステータス(0から100までの数字)をiot-srvは受付、2日間のデータを保持します。
@@ -14,10 +18,10 @@ block content
 
       h4 ステータス更新
       ul
-        li 特定の値に更新 #[code #{host}/<デバイス名>/<数字>]
-        li ステータス100に更新 #[code #{host}/<デバイス名>/on]
-        li ステータス0に更新 #[code #{host}/<デバイス名>/off]
+        li 特定の値に更新 #[code= `${host}/<デバイス名>/<数字>`]
+        li ステータス100に更新 #[code= `${host}/<デバイス名>/on`]
+        li ステータス0に更新 #[code= `${host}/<デバイス名>/off`]
 
       h4 ステータス確認
       ul
-        li: code #{host}/<デバイス名>
+        li: code= `${host}/devices/<デバイス名>`
