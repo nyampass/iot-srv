@@ -5,6 +5,8 @@ const fetch = require('node-fetch')
 const proxyquire = require('proxyquire')
 const sleep = require('sleep-promise')
 
+process.env.TEST = 'test'
+
 const redis = proxyquire('./config/redis', {
   redis: fakeredis
 })

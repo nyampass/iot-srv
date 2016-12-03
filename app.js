@@ -2,11 +2,15 @@
 
 const express = require('express')
 const bodyParser = require('body-parser')
+const morgan = require('morgan')
 
 const device = require('./models/device')
 
 const app = express()
 
+if (!process.env.TEST) {
+  app.use(morgan('dev'))
+}
 app.use(express.static('public'))
 
 app.set('view engine', 'pug')
