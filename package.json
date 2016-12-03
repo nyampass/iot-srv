@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node --harmony app",
-    "test": "xo && node --harmony test"
+    "test": "xo && node --harmony test | tnyan"
   },
   "engines": {
     "node": "^7.0.0"
@@ -15,15 +15,17 @@
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "hogan-express": "^0.5.2",
+    "morgan": "^1.7.0",
+    "node-fetch": "^1.6.3",
     "pug": "^2.0.0-beta6",
     "redis": "^2.6.3"
   },
   "devDependencies": {
     "blue-tape": "^1.0.0",
     "fakeredis": "^1.0.3",
-    "node-fetch": "^1.6.3",
     "proxyquire": "^1.7.10",
     "sleep-promise": "^2.0.0",
+    "tap-nyan": "^1.1.0",
     "xo": "^0.17.0"
   },
   "author": "",
