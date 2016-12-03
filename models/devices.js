@@ -4,6 +4,7 @@ const EventEmitter = require('events')
 const vm = require('vm')
 
 const redis = require('../config/redis')
+const notify = require('./notify')
 
 const emitter = new EventEmitter()
 
@@ -15,7 +16,7 @@ const LOG = 'l'
 const CURRENT_STATUS = 'cs'
 const CURRENT_RESULT = 'cr'
 
-const generate = (name, key) => `${name}:${key}`
+const generate = (name, key) => `device:${name}:${key}`
 
 // redis operators
 const mget = (name, ...keys) => redis.mgetAsync(keys.map(key => generate(name, key)))
@@ -31,7 +32,7 @@ const runCode = (code, name, val, prevVal) => {
     return 'none'
   }
 
-  const ctx = {name, val, prevVal, require, console}
+  const ctx = {name, val, prevVal, require, console, notify}
   vm.createContext(ctx)
 
   try {
@@ -42,8 +43,15 @@ const runCode = (code, name, val, prevVal) => {
   }
 }
 
+const validateName = name => {
+  if (name === 'api') {
+    throw new Error('invalid name')
+  }
+}
+
 const device = {
   async status(name) {
+    validateName(name)
     const [currentStatus = '0', resetOnFetchStatus = '0'] = await mget(name, CURRENT_STATUS, RESET_ON_FETCH_STATUS)
     if (resetOnFetchStatus === '0') {
       await set(name, CURRENT_STATUS, '0')
@@ -52,12 +60,14 @@ const device = {
   },
 
   async info(name) {
+    validateName(name)
     const [code = '', resetOnFetchStatus = '0', updatedAtString] = await mget(name, CODE, RESET_ON_FETCH_STATUS, UPDATED_AT)
     const updatedAt = updatedAtString === null ? '' : new Date(parseInt(updatedAtString, 10))
     return {code, name, resetOnFetchStatus: resetOnFetchStatus === '1', updatedAt}
   },
 
   async logs(name) {
+    validateName(name)
     const ks = await keys(name, LOG)
     const vs = ks.length > 0 ? await redis.mgetAsync(ks) : []
     const logs = []
@@ -77,10 +87,12 @@ const device = {
   },
 
   async updateSettings(name, code, resetOnFetchStatus) {
+    validateName(name)
     await mset(name, {[CODE]: code, [RESET_ON_FETCH_STATUS]: resetOnFetchStatus ? '1' : '0'})
   },
 
   async setStatus(name, value) {
+    validateName(name)
     const [code = '', prev] = await mget(name, CODE, CURRENT_STATUS)
     const now = Date.now()
     const result = runCode(code, name, value, prev)
@@ -97,7 +109,7 @@ const device = {
   },
 
   async list() {
-    return Array.from(new Set((await redis.keysAsync('*')).map(key => key.split(':')[0])))
+    return Array.from(new Set((await redis.keysAsync('device:*')).map(key => key.split(':')[1])))
   },
 
   once(name, handler) {
