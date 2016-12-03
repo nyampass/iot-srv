@@ -17,8 +17,8 @@ block content
               li #[code deviceName]: デバイス名
               li #[code val]: 変更後のステータス。(onの場合100が、offの場合0が入ります。)
               li #[code prevVal]: 変更前のステータス
-          textarea#code.form-control(name='code', rows=8, placeholder=`var https = require('http');
-  http.get('http://example.com/launch');`)
+          textarea#code.form-control(name='code', rows=8, placeholder=`require('http').get('http://example.com/launch')`)
+            = device.code
           label(for='reset-on-fetch-status', style={margin: '5px 0'}) ステータシ取得時リセット
           .bs-callout.bs-callout-info
             p ステータスの値を取得する度、強制的にステータス値を0に戻します。
