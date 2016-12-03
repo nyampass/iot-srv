@@ -4,19 +4,35 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app"
+    "start": "node --harmony app",
+    "test": "xo && node --harmony test"
   },
   "engines": {
-    "node": "6.7.0",
-    "npm": "3.10.3"
+    "node": "^7.0.0"
   },
   "dependencies": {
-    "express": "4.13.4",
-    "redis": "2.6.2",
-    "hogan-express": "0.5.2",
-    "express-bootstrap-service": "1.0.0",
-    "body-parser": "1.15.2"
+    "bluebird": "^3.4.6",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "hogan-express": "^0.5.2",
+    "pug": "^2.0.0-beta6",
+    "redis": "^2.6.3"
+  },
+  "devDependencies": {
+    "blue-tape": "^1.0.0",
+    "fakeredis": "^1.0.3",
+    "node-fetch": "^1.6.3",
+    "proxyquire": "^1.7.10",
+    "sleep-promise": "^2.0.0",
+    "xo": "^0.17.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "xo": {
+    "semicolon": false,
+    "space": 2,
+    "envs": [
+      "node"
+    ]
+  }
 }

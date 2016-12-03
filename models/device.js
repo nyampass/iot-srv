@@ -1,171 +1,111 @@
-var redis = require('redis');
-var _redisClient = null;
+'use strict'
 
-var REDIS_KEY = {
-  DEVICE_CODE: "c",
-  DEVICE_RESET_ON_FETCH_STATUS: "r",
-  DEVICE_UPDATED_AT: "u",
-  DEVICE_LOG: "l",
-  DEVICE_CURRENT_STATUS: "cs",
-  DEVICE_CURRENT_RESULT: "cr"
-}
+const EventEmitter = require('events')
+const vm = require('vm')
 
-function redisDeviceKey(deviceName, key, option) {
-  return deviceName + ":" + key + (option? ":" + option: "");
-}
+const redis = require('../config/redis')
 
-function redisClient() {
-  if (_redisClient) {
-    return _redisClient;
+const emitter = new EventEmitter()
+
+// device keys
+const CODE = 'c'
+const RESET_ON_FETCH_STATUS = 'r'
+const UPDATED_AT = 'u'
+const LOG = 'l'
+const CURRENT_STATUS = 'cs'
+const CURRENT_RESULT = 'cr'
+
+const generate = (name, key) => `${name}:${key}`
+
+// redis operators
+const mget = (name, ...keys) => redis.mgetAsync(keys.map(key => generate(name, key)))
+  .then(values => values.map(value => value === null ? undefined : value))
+const mset = (name, kvs) => redis.msetAsync(
+  ...Object.keys(kvs).reduce((args, key) => args.concat(generate(name, key), kvs[key]), []))
+const set = (name, key, value) => redis.setAsync(generate(name, key), value)
+const keys = (name, key) => redis.keysAsync(generate(name, `${key}:*`))
+
+// run code in sandbox
+const runCode = (code, name, val, prevVal) => {
+  if (code === '') {
+    return 'none'
   }
 
-  _redisClient = redis.createClient(process.env.REDIS_URL);
-  _redisClient.on('error', function(err) {
-    console.log(err);
-    _redisClient = null;
-  });
-  return _redisClient;
-}
-
-var REDIS_EXPIRE = 86400 * 2;
-
-function loge(err) {
-  if (err) {
-    console.log("ERR: " + err);
-  }
-}
-
-var Device = function(name) {
-  this.name = name;
-}
-
-Device.prototype.status = function(callback) {
-  var name = this.name;
-  redisClient().mget([
-    redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS),
-    redisDeviceKey(name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS)
-  ], function(err, vals) {
-    loge(err);
-
-    var statusCallback = function() {
-      callback(vals[0] || "0");
-    }
-
-    if (vals[1] && vals[1] == "1") {
-      redisClient().set(redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS), 0,
-                        statusCallback);
-    } else {
-      statusCallback();
-    }
-    
-  });
-}
-
-Device.prototype.info = function(callback) {
-  var name = this.name;
-  redisClient().mget([
-    redisDeviceKey(name, REDIS_KEY.DEVICE_CODE),
-    redisDeviceKey(name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS),
-    redisDeviceKey(name, REDIS_KEY.DEVICE_UPDATED_AT)], function(err, vals) {
-      var code = vals[0];
-      var resetOnFetchStatus = vals[1] == "1";
-      var updatedAt = vals[2]? new Date(parseInt(vals[2])).toString(): "";
-      callback({
-        name: name,
-        code: code,
-        resetOnFetchStatus: resetOnFetchStatus,
-        updatedAt: updatedAt
-      });
-    });
-}
-
-Device.prototype.logs = function(callback) {
-  var name = this.name;
-  redisClient().keys(
-    redisDeviceKey(name, REDIS_KEY.DEVICE_LOG, "*"),
-    function (err, keys) {
-      loge(err);
-      
-      redisClient().mget(keys, function(err, response) {
-        var logs = [];
-        for (var i = 0; i < keys.length; i++) {
-          var timeKey = keys[i].match(/.*:(\d+)/);
-          if (timeKey) {
-            logs.push({time: parseInt(timeKey[1]), value: response[i]})
-          }
-        }
-        logs = logs.sort(function(a,b) {
-          return a.time - b.time;
-        });
-        callback({name: name,
-                  logLabels: logs.map(function(o) { return new Date(o.time); }),
-                  logs: logs});
-      });
-    });
-}
-
-Device.prototype.updateSettings = function(code, resetOnFetchStatus, callback) {
-  redisClient().mset(
-    redisDeviceKey(this.name, REDIS_KEY.DEVICE_CODE), code,
-    redisDeviceKey(this.name, REDIS_KEY.DEVICE_RESET_ON_FETCH_STATUS), resetOnFetchStatus? "1": "0",
-    function(err) {
-      loge(err);
-      callback()
-    });
-}
-
-Device.prototype.runCode = function(code, name, val, prevVal) {
-  if (!code) {
-    return "none";
-  }
+  const ctx = {name, val, prevVal, require, console}
+  vm.createContext(ctx)
 
   try {
-    eval("(function(deviceName, val, prevVal){" + code + "})(name, val, prevVal)");
-    return "success";
-
-  } catch(e) {
-    loge(e);
-    return "failed";
+    vm.runInContext(code, ctx)
+    return 'success'
+  } catch (err) {
+    return 'failed'
   }
 }
 
-Device.prototype.setStatus = function(val, callback) {
-  var self = this;
-  var name = this.name;
+const device = {
+  async status(name) {
+    const [currentStatus = '0', resetOnFetchStatus = '0'] = await mget(name, CURRENT_STATUS, RESET_ON_FETCH_STATUS)
+    if (resetOnFetchStatus === '0') {
+      await set(name, CURRENT_STATUS, '0')
+    }
+    return currentStatus
+  },
 
-  redisClient().mget([
-    redisDeviceKey(name, REDIS_KEY.DEVICE_CODE),
-    redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS)], function(err, vals) {
-      var code = vals[0];
-      var prevVal = vals[1];
+  async info(name) {
+    const [code = '', resetOnFetchStatus = '0', updatedAtString] = await mget(name, CODE, RESET_ON_FETCH_STATUS, UPDATED_AT)
+    const updatedAt = updatedAtString === null ? '' : new Date(parseInt(updatedAtString, 10))
+    return {code, name, resetOnFetchStatus: resetOnFetchStatus === '1', updatedAt}
+  },
 
-      var now = new Date().getTime();
-      var key = redisDeviceKey(name, REDIS_KEY.DEVICE_LOG, now);
+  async logs(name) {
+    const ks = await keys(name, LOG)
+    const vs = ks.length > 0 ? await redis.mgetAsync(ks) : []
+    const logs = []
+    for (let i = 0; i < ks.length; i++) {
+      const parts = ks[i].split(':')
+      const value = vs[i]
+      const time = parseInt(parts[parts.length - 1], 10)
+      if (!Number.isNaN(time)) {
+        logs.push({time, value})
+      }
+    }
+    logs.sort((a, b) => a.time - b.time)
+    return {
+      logLabels: logs.map(log => new Date(log.time)),
+      name, logs
+    }
+  },
 
-      var result = self.runCode(code, name, val, prevVal);
-      // console.log("setStatusHandler: response: " + result);
-      
-      redisClient().mset(
-        key, val,
-        redisDeviceKey(name, REDIS_KEY.DEVICE_UPDATED_AT), now,
-        redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_STATUS), val,
-        redisDeviceKey(name, REDIS_KEY.DEVICE_CURRENT_RESULT), result,
-        function() {
-          redisClient().expire(key, REDIS_EXPIRE);
-          
-          callback();
-        });
-    });
+  async updateSettings(name, code, resetOnFetchStatus) {
+    await mset(name, {[CODE]: code, [RESET_ON_FETCH_STATUS]: resetOnFetchStatus ? '1' : '0'})
+  },
+
+  async setStatus(name, value) {
+    const [code = '', prev] = await mget(name, CODE, CURRENT_STATUS)
+    const now = Date.now()
+    const result = runCode(code, name, value, prev)
+    const logKey = `${LOG}:${now}`
+    await redis.multi()
+      .mset(
+        generate(name, logKey), value,
+        generate(name, UPDATED_AT), now,
+        generate(name, CURRENT_STATUS), value,
+        generate(name, CURRENT_RESULT), result)
+      .expire(generate(name, logKey), 86400 * 2)
+      .execAsync()
+    emitter.emit(`update:${name}`, value)
+  },
+
+  async list() {
+    return Array.from(new Set((await redis.keysAsync('*')).map(key => key.split(':')[0])))
+  },
+
+  once(name, handler) {
+    emitter.once(name, handler)
+    return {
+      cancel: () => emitter.removeListener(name, handler)
+    }
+  }
 }
 
-function deviceList(callback) {
-  redisClient().keys(
-    redisDeviceKey("*", REDIS_KEY.DEVICE_CURRENT_STATUS),
-    function (err, keys) {
-      loge(err);
-      callback(keys.map(function(o) { return o.split(":")[0]; }));
-    });
-}
-
-module.exports = function(name) { return new Device(name); };
-module.exports.list = deviceList;
+module.exports = device

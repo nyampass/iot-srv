@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  .row
+    .col-md-6
+      h3 デバイス一覧
+      ul
+        each name in devices
+          li: a(href=name)= name
+    .col-md-6
+      h3 利用方法
+      p デバイスごとのステータス(0から100までの数字)をiot-srvは受付、2日間のデータを保持します。
+      p デバイス名の部分は英数字を利用できます。予め登録する必要はありません
+
+      h4 ステータス更新
+      ul
+        li 特定の値に更新 #[code #{host}/<デバイス名>/<数字>]
+        li ステータス100に更新 #[code #{host}/<デバイス名>/on]
+        li ステータス0に更新 #[code #{host}/<デバイス名>/off]
+
+      h4 ステータス確認
+      ul
+        li: code #{host}/<デバイス名>
