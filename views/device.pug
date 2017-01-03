@@ -30,5 +30,5 @@ block content
       .chartjs_container
         canvas#chart(width=400, height=400)
       script
-        | var deviceName = #{JSON.stringify(device.name)}
+        | var deviceName = !{JSON.stringify(device.name)}
       script(src='/js/iot-srv-device.js')
