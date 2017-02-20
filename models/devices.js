@@ -96,6 +96,7 @@ const device = {
     const [code = '', prev] = await mget(name, CODE, CURRENT_STATUS)
     const now = Date.now()
     const result = runCode(code, name, value, prev)
+    console.log(result)
     const logKey = `${LOG}:${now}`
     await redis.multi()
       .mset(
