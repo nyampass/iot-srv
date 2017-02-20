@@ -18,7 +18,8 @@
     "morgan": "^1.7.0",
     "node-fetch": "^1.6.3",
     "pug": "^2.0.0-beta6",
-    "redis": "^2.6.3"
+    "redis": "^2.6.3",
+    "request": "^2.79.0"
   },
   "devDependencies": {
     "blue-tape": "^1.0.0",
